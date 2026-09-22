@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Controle de Horários</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+    <!-- Tela de Login -->
+    <div id="telaLogin" class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-badge-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h2>Acesso ao Sistema</h2>
+                <p>Entre com seu usuário e senha para continuar</p>
+            </div>
+            <form id="formLogin" class="login-form">
+                <div id="loginFeedback" class="login-feedback" style="display: none;"></div>
+                <label class="field">
+                    <span class="field-label">Usuário</span>
+                    <input id="loginUsuario" type="text" placeholder="Nome de usuário" required autocomplete="username">
+                </label>
+                <label class="field">
+                    <span class="field-label">Senha</span>
+                    <input id="loginSenha" type="password" placeholder="Sua senha" required autocomplete="current-password">
+                </label>
+                <button type="submit" class="primary btn-submit login-btn">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Aplicação Principal -->
+    <div class="app" id="appMain" style="display: none;">
+        <header>
+            <div class="header-titles">
+                <p>Registro e controle de jornada</p>
+            </div>
+            <div class="header-user-panel" id="headerUserPanel">
+                <span class="user-info-badge" id="userInfoBadge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span id="userNameDisplay">admin</span>
+                </span>
+                <button type="button" class="btn-logout" id="btnLogout" title="Encerrar sessão">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Sair
+                </button>
+            </div>
+        </header>
+
+        <nav>
+            <button class="tab active" data-tab="ponto">Lançar horas</button>
+            <button class="tab" data-tab="historico">Histórico</button>
+            <button class="tab" data-tab="funcionarios">Funcionários</button>
+            <button class="tab" data-tab="relatorio">Relatório</button>
+            <button class="tab" data-tab="usuarios" id="tabUsuarios" style="display: none;">Gerenciar Logins</button>
+        </nav>
+
+        <main>
+            <section id="ponto" class="tela active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Novo registro de trabalho</h2>
+                        <span class="subtitle">Informe os horários da jornada do colaborador</span>
+                    </div>
+                    <form id="formPonto">
+                        <div class="form-grid">
+                            <!-- Linha 1: Funcionário e Data -->
+                            <label class="field">
+                                <span class="field-label">Funcionário</span>
+                                <select id="funcionario" required></select>
+                            </label>
+                            <label class="field">
+                                <span class="field-label">Data</span>
+                                <input id="data" type="date" required>
+                            </label>
+
+                            <!-- Linha 2: Entrada e Saída lado a lado embaixo do nome e data -->
+                            <label class="field">
+                                <span class="field-label">Entrada</span>
+                                <input id="entrada" type="time" required>
+                            </label>
+                            <label class="field">
+                                <span class="field-label">Saída</span>
+                                <input id="saida" type="time" required>
+                            </label>
+
+                            <!-- Linha 3: Intervalo (quantidade direto) -->
+                            <div class="field field-full">
+                                <div class="field-header-row">
+                                    <span class="field-label">Intervalo (quantidade)</span>
+                                    <span class="hint-text" id="intervaloHint">Sem intervalo deduzido</span>
+                                </div>
+                                <div class="intervalo-input-wrap">
+                                    <input id="intervalo" type="number" min="0" step="5" placeholder="Ex: 60" value="0">
+                                    <span class="input-unit">minutos</span>
+                                </div>
+                                <div class="chips-list" id="intervaloChips">
+                                    <button type="button" class="chip active" data-min="0">0m</button>
+                                    <button type="button" class="chip" data-min="15">15m</button>
+                                    <button type="button" class="chip" data-min="30">30m</button>
+                                    <button type="button" class="chip" data-min="45">45m</button>
+                                    <button type="button" class="chip" data-min="60">1h (60m)</button>
+                                    <button type="button" class="chip" data-min="75">1h15</button>
+                                    <button type="button" class="chip" data-min="90">1h30</button>
+                                    <button type="button" class="chip" data-min="120">2h</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pré-visualização do cálculo em tempo real -->
+                        <div class="preview-box" id="previewBox">
+                            <div class="preview-info">
+                                <span class="preview-title">Total da jornada calculado:</span>
+                                <span class="preview-detail" id="previewDetail">Entrada e Saída não informados</span>
+                            </div>
+                            <div class="preview-badge" id="previewTotal">00:00</div>
+                        </div>
+
+                        <p class="obs"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg> O sistema calcula automaticamente jornadas que viram a meia-noite.</p>
+                        <button type="submit" class="primary btn-submit">Salvar registro</button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="historico" class="tela">
+                <div class="card">
+                    <h2>Histórico</h2>
+                    <div class="filtros">
+                        <label>De<input id="hIni" type="date"></label>
+                        <label>Até<input id="hFim" type="date"></label>
+                        <label>Funcionário<select id="hFunc">
+                                <option value="">Todos</option>
+                            </select></label>
+                        <button class="primary" id="filtrar">Filtrar</button>
+                    </div>
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Funcionário</th>
+                                    <th>Entrada</th>
+                                    <th>Intervalo</th>
+                                    <th>Saída</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="funcionarios" class="tela">
+                <div class="card">
+                    <h2>Funcionários</h2>
+                    <form id="formFunc" class="add"><input id="nome" placeholder="Nome do funcionário" required><button
+                            class="primary">Adicionar</button></form>
+                    <ul id="funcList"></ul>
+                </div>
+            </section>
+
+            <section id="relatorio" class="tela">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Relatório do período</h2>
+                        <span class="subtitle">Consolide as horas trabalhadas e gere o relatório em PDF</span>
+                    </div>
+                    <div class="filtros">
+                        <label>De<input id="rIni" type="date"></label>
+                        <label>Até<input id="rFim" type="date"></label>
+                        <button class="primary" id="gerar">Pesquisar</button>
+                        <button type="button" class="btn-pdf" id="gerarPdf">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="vertical-align: -2px; margin-right: 4px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Gerar PDF
+                        </button>
+                    </div>
+                    <div id="resumo"></div>
+                </div>
+            </section>
+
+            <section id="usuarios" class="tela">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Gerenciar Logins de Acesso</h2>
+                        <span class="subtitle">Crie e gerencie os logins autorizados a acessar o sistema</span>
+                    </div>
+
+                    <form id="formNovoLogin" class="user-add-form">
+                        <div class="form-grid user-form-grid">
+                            <label class="field">
+                                <span class="field-label">Nome de Usuário</span>
+                                <input id="novoLoginUsuario" type="text" placeholder="Ex: joao, recepcao, rh" required autocomplete="off">
+                            </label>
+                            <label class="field">
+                                <span class="field-label">Senha</span>
+                                <input id="novoLoginSenha" type="password" placeholder="Defina a senha de acesso" required autocomplete="new-password">
+                            </label>
+                            <div class="field field-action-btn">
+                                <button type="submit" class="primary btn-submit">Criar Login</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="userFeedback" class="alert-box" style="display: none;"></div>
+
+                    <div class="users-list-wrapper">
+                        <h3 class="section-subtitle">Logins Cadastrados</h3>
+                        <div class="table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Usuário</th>
+                                        <th>Tipo de Acesso</th>
+                                        <th>Cadastrado em</th>
+                                        <th style="text-align: right;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaUsuarios"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
